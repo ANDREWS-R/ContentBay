@@ -86,7 +86,7 @@ export default function MyIdeasPage() {
               {ideas.map((idea) => (
 
                 <div
-                  key={idea._id}
+                  key={idea.id}
                   className="bg-white/[0.03] border border-white/10 rounded-[32px] overflow-hidden"
                 >
 
@@ -125,7 +125,7 @@ export default function MyIdeasPage() {
                     </div>
 
                     <Link
-                      href={`/marketplace/${idea._id}`}
+                      href={`/marketplace/${idea.id}`}
                       className="inline-block mt-6 bg-gradient-to-r from-orange-400 to-pink-500 px-4 py-2 rounded-full text-sm font-semibold"
                     >
                       View Idea

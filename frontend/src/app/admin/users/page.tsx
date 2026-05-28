@@ -112,7 +112,7 @@ export default function AdminUsersPage() {
             {users.map((user) => (
 
               <tr
-                key={user._id}
+                key={user.id}
                 className="border-t border-zinc-800"
               >
 
@@ -128,7 +128,7 @@ export default function AdminUsersPage() {
 
                   <button
                     onClick={() =>
-                      deleteUser(user._id)
+                      deleteUser(user.id)
                     }
                     className="bg-red-600 px-4 py-2 rounded-xl"
                   >

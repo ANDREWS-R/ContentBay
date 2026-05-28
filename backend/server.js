@@ -3,8 +3,9 @@ const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/admin");
 
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
+
+const pool = require("./config/db");
 
 require("dotenv").config();
 
@@ -25,17 +26,27 @@ app.get("/", (req, res) => {
 });
 
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
+// START SERVER
+async function startServer() {
 
-    console.log("MongoDB Connected");
+  try {
+
+    const connection = await pool.getConnection();
+
+    console.log("MySQL Connected");
+
+    connection.release();
 
     app.listen(5000, () => {
       console.log("Server running on port 5000");
     });
 
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+}
+
+startServer();

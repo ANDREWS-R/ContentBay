@@ -172,7 +172,7 @@ export default function IdeaDetailsPage() {
             {!isOwner && !hasPurchased && (
 
               <Link
-                href={`/payment?id=${idea._id}&title=${encodeURIComponent(
+                href={`/payment?id=${idea.id}&title=${encodeURIComponent(
                   idea.title
                 )}&price=${idea.price}`}
                 className="inline-block mt-10 bg-gradient-to-r from-orange-400 to-pink-500 px-8 py-4 rounded-2xl font-semibold hover:opacity-90 transition"

@@ -1,7 +1,6 @@
 const express = require("express");
 
-const User = require("../models/User");
-const Idea = require("../models/Idea");
+const pool = require("../config/db");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
@@ -21,34 +20,30 @@ router.get(
     try {
 
       // TOTAL USERS
-      const totalUsers = await User.countDocuments();
+      const [usersCount] = await pool.query(
+        "SELECT COUNT(*) AS totalUsers FROM users"
+      );
 
-      // AVAILABLE IDEAS ONLY
-      const totalIdeas = await Idea.countDocuments({
-        sold: false,
-      });
+      // AVAILABLE IDEAS
+      const [ideasCount] = await pool.query(
+        "SELECT COUNT(*) AS totalIdeas FROM ideas WHERE sold = false"
+      );
 
       // SOLD IDEAS
-      const soldIdeas = await Idea.countDocuments({
-        sold: true,
-      });
+      const [soldIdeasCount] = await pool.query(
+        "SELECT COUNT(*) AS soldIdeas FROM ideas WHERE sold = true"
+      );
 
-      // SOLD IDEAS DATA
-      const soldIdeasData = await Idea.find({
-        sold: true,
-      });
-
-      // REVENUE
-      const revenue = soldIdeasData.reduce(
-        (total, idea) => total + idea.price,
-        0
+      // TOTAL REVENUE
+      const [revenueData] = await pool.query(
+        "SELECT SUM(price) AS revenue FROM ideas WHERE sold = true"
       );
 
       res.status(200).json({
-        totalUsers,
-        totalIdeas,
-        soldIdeas,
-        revenue,
+        totalUsers: usersCount[0].totalUsers,
+        totalIdeas: ideasCount[0].totalIdeas,
+        soldIdeas: soldIdeasCount[0].soldIdeas,
+        revenue: revenueData[0].revenue || 0,
       });
 
     } catch (error) {
@@ -76,9 +71,9 @@ router.get(
 
     try {
 
-      const users = await User.find().sort({
-        createdAt: -1,
-      });
+      const [users] = await pool.query(
+        "SELECT * FROM users ORDER BY created_at DESC"
+      );
 
       res.status(200).json(users);
 
@@ -107,9 +102,9 @@ router.get(
 
     try {
 
-      const ideas = await Idea.find().sort({
-        createdAt: -1,
-      });
+      const [ideas] = await pool.query(
+        "SELECT * FROM ideas ORDER BY created_at DESC"
+      );
 
       res.status(200).json(ideas);
 
@@ -138,7 +133,10 @@ router.delete(
 
     try {
 
-      await Idea.findByIdAndDelete(req.params.id);
+      await pool.query(
+        "DELETE FROM ideas WHERE id = ?",
+        [req.params.id]
+      );
 
       res.status(200).json({
         message: "Idea deleted successfully",
@@ -170,31 +168,39 @@ router.delete(
     try {
 
       // PREVENT SELF DELETE
-      if (req.user.id === req.params.id) {
+      if (String(req.user.id) === String(req.params.id)) {
         return res.status(400).json({
           message: "You cannot delete your own account",
         });
       }
 
-      const userToDelete = await User.findById(
-  req.params.id
-);
+      // FIND USER
+      const [users] = await pool.query(
+        "SELECT * FROM users WHERE id = ?",
+        [req.params.id]
+      );
 
-// USER NOT FOUND
-if (!userToDelete) {
-  return res.status(404).json({
-    message: "User not found",
-  });
-}
+      // USER NOT FOUND
+      if (users.length === 0) {
+        return res.status(404).json({
+          message: "User not found",
+        });
+      }
 
-// PREVENT ADMIN DELETE
-if (userToDelete.role === "ADMIN") {
-  return res.status(403).json({
-    message: "Admin accounts cannot be deleted",
-  });
-}
+      const userToDelete = users[0];
 
-await User.findByIdAndDelete(req.params.id);
+      // PREVENT ADMIN DELETE
+      if (userToDelete.role === "ADMIN") {
+        return res.status(403).json({
+          message: "Admin accounts cannot be deleted",
+        });
+      }
+
+      // DELETE USER
+      await pool.query(
+        "DELETE FROM users WHERE id = ?",
+        [req.params.id]
+      );
 
       res.status(200).json({
         message: "User deleted successfully",

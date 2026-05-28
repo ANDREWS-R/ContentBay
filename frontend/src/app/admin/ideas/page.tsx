@@ -120,7 +120,7 @@ export default function AdminIdeasPage() {
             {ideas.map((idea) => (
 
               <tr
-                key={idea._id}
+                key={idea.id}
                 className="border-t border-zinc-800"
               >
 
@@ -148,7 +148,7 @@ export default function AdminIdeasPage() {
 
                   <button
                     onClick={() =>
-                      deleteIdea(idea._id)
+                      deleteIdea(idea.id)
                     }
                     className="bg-red-600 px-4 py-2 rounded-xl"
                   >

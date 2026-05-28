@@ -159,7 +159,7 @@ export default function MarketplacePage() {
               {ideas.map((idea: any) => (
 
                 <div
-                  key={idea._id}
+                  key={idea.id}
                   className="bg-white/[0.03] border border-white/10 rounded-[32px] overflow-hidden hover:bg-white/[0.05] transition"
                 >
 
@@ -188,7 +188,7 @@ export default function MarketplacePage() {
                       </p>
 
                       <Link
-                        href={`/marketplace/${idea._id}`}
+                        href={`/marketplace/${idea.id}`}
                         className="bg-gradient-to-r from-orange-400 to-pink-500 px-4 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition"
                       >
                         View

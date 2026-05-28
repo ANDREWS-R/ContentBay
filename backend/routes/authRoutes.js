@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const User = require("../models/User");
+const pool = require("../config/db");
 
 const router = express.Router();
 
@@ -51,11 +51,12 @@ router.post("/register", async (req, res) => {
     }
 
     // CHECK EXISTING USER
-    const existingUser = await User.findOne({
-      username,
-    });
+    const [existingUsers] = await pool.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
 
-    if (existingUser) {
+    if (existingUsers.length > 0) {
       return res.status(400).json({
         message: "Username already exists",
       });
@@ -68,16 +69,16 @@ router.post("/register", async (req, res) => {
     );
 
     // CREATE USER
-    const newUser = await User.create({
-      username,
-      password: hashedPassword,
-    });
+    const [result] = await pool.query(
+      "INSERT INTO users (username, password) VALUES (?, ?)",
+      [username, hashedPassword]
+    );
 
     res.status(201).json({
       message: "User registered successfully",
       user: {
-        id: newUser._id,
-        username: newUser.username,
+        id: result.insertId,
+        username,
       },
     });
 
@@ -114,15 +115,18 @@ router.post("/login", async (req, res) => {
     }
 
     // CHECK USER
-    const user = await User.findOne({
-      username,
-    });
+    const [users] = await pool.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
 
-    if (!user) {
+    if (users.length === 0) {
       return res.status(400).json({
         message: "Invalid credentials",
       });
     }
+
+    const user = users[0];
 
     // CHECK PASSWORD
     const isMatch = await bcrypt.compare(
@@ -138,22 +142,22 @@ router.post("/login", async (req, res) => {
 
     // CREATE TOKEN
     const token = jwt.sign(
-    {
-      id: user._id,
-      username: user.username,
-      role: user.role,
-    },
-    "secretkey",
-    {
-      expiresIn: "7d",
-    }
-  );
+      {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
+      "secretkey",
+      {
+        expiresIn: "7d",
+      }
+    );
 
     res.status(200).json({
       message: "Login successful",
       token,
       user: {
-        id: user._id,
+        id: user.id,
         username: user.username,
         role: user.role,
       },

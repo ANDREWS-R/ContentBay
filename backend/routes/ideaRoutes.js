@@ -1,6 +1,6 @@
 const express = require("express");
 
-const Idea = require("../models/Idea");
+const pool = require("../config/db");
 
 const router = express.Router();
 
@@ -54,16 +54,22 @@ router.post("/", async (req, res) => {
     }
 
     // CREATE IDEA
-    const newIdea = await Idea.create({
-      title,
-      content,
-      price,
-      creator,
-    });
+    const [result] = await pool.query(
+      `INSERT INTO ideas 
+      (title, content, price, creator) 
+      VALUES (?, ?, ?, ?)`,
+      [title, content, price, creator]
+    );
+
+    // GET CREATED IDEA
+    const [newIdea] = await pool.query(
+      "SELECT * FROM ideas WHERE id = ?",
+      [result.insertId]
+    );
 
     res.status(201).json({
       message: "Idea posted successfully",
-      idea: newIdea,
+      idea: newIdea[0],
     });
 
   } catch (error) {
@@ -85,9 +91,11 @@ router.get("/", async (req, res) => {
 
   try {
 
-    const ideas = await Idea.find({
-      sold: false,
-    }).sort({ createdAt: -1 });
+    const [ideas] = await pool.query(
+      `SELECT * FROM ideas 
+       WHERE sold = false 
+       ORDER BY created_at DESC`
+    );
 
     res.status(200).json(ideas);
 
@@ -110,15 +118,18 @@ router.get("/:id", async (req, res) => {
 
   try {
 
-    const idea = await Idea.findById(req.params.id);
+    const [ideas] = await pool.query(
+      "SELECT * FROM ideas WHERE id = ?",
+      [req.params.id]
+    );
 
-    if (!idea) {
+    if (ideas.length === 0) {
       return res.status(404).json({
         message: "Idea not found",
       });
     }
 
-    res.status(200).json(idea);
+    res.status(200).json(ideas[0]);
 
   } catch (error) {
 
@@ -142,13 +153,18 @@ router.put("/:id/purchase", async (req, res) => {
     console.log("PURCHASE ID:", req.params.id);
 
     // GET IDEA
-    const idea = await Idea.findById(req.params.id);
+    const [ideas] = await pool.query(
+      "SELECT * FROM ideas WHERE id = ?",
+      [req.params.id]
+    );
 
-    if (!idea) {
+    if (ideas.length === 0) {
       return res.status(404).json({
         message: "Idea not found",
       });
     }
+
+    const idea = ideas[0];
 
     // GET BUYER
     const { purchasedBy } = req.body;
@@ -175,15 +191,22 @@ router.put("/:id/purchase", async (req, res) => {
     }
 
     // UPDATE IDEA
-    idea.sold = true;
+    await pool.query(
+      `UPDATE ideas 
+       SET sold = true, purchasedBy = ?
+       WHERE id = ?`,
+      [purchasedBy, req.params.id]
+    );
 
-    idea.purchasedBy = purchasedBy;
-
-    await idea.save();
+    // GET UPDATED IDEA
+    const [updatedIdea] = await pool.query(
+      "SELECT * FROM ideas WHERE id = ?",
+      [req.params.id]
+    );
 
     res.status(200).json({
       message: "Idea purchased successfully",
-      idea,
+      idea: updatedIdea[0],
     });
 
   } catch (error) {
@@ -205,9 +228,12 @@ router.get("/purchases/:username", async (req, res) => {
 
   try {
 
-    const purchasedIdeas = await Idea.find({
-      purchasedBy: req.params.username,
-    }).sort({ createdAt: -1 });
+    const [purchasedIdeas] = await pool.query(
+      `SELECT * FROM ideas 
+       WHERE purchasedBy = ?
+       ORDER BY created_at DESC`,
+      [req.params.username]
+    );
 
     res.status(200).json(purchasedIdeas);
 
@@ -230,9 +256,12 @@ router.get("/creator/:username", async (req, res) => {
 
   try {
 
-    const userIdeas = await Idea.find({
-      creator: req.params.username,
-    }).sort({ createdAt: -1 });
+    const [userIdeas] = await pool.query(
+      `SELECT * FROM ideas 
+       WHERE creator = ?
+       ORDER BY created_at DESC`,
+      [req.params.username]
+    );
 
     res.status(200).json(userIdeas);
 
