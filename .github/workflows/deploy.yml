@@ -1,0 +1,66 @@
+name: Deploy ContentBay
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+
+          echo "${{ secrets.BASTION_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Verify SSH Key
+        run: |
+          ssh-keygen -l -f ~/.ssh/id_ed25519
+
+      - name: Test Bastion Login
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/id_ed25519 \
+            ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
+            "hostname"
+
+      - name: Deploy Backend
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -o ProxyJump=${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
+            -i ~/.ssh/id_ed25519 \
+            ubuntu@${{ secrets.BACKEND_PRIVATE_IP }} \
+            "
+            cd ~/ContentBay &&
+            git pull origin main &&
+            cd backend &&
+            npm install &&
+            pm2 restart contentbay-backend
+            "
+
+      - name: Deploy Frontend
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -o ProxyJump=${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
+            -i ~/.ssh/id_ed25519 \
+            ubuntu@${{ secrets.FRONTEND_PRIVATE_IP }} \
+            "
+            cd ~/ContentBay &&
+            git pull origin main &&
+            cd frontend &&
+            npm install &&
+            npm run build &&
+            pm2 restart contentbay-frontend
+            "
