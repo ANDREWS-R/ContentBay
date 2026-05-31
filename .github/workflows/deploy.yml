@@ -13,7 +13,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-            - name: Setup SSH Key
+      - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
 
