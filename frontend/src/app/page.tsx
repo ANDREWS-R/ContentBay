@@ -70,7 +70,7 @@ export default function HomePage() {
 
             <h1 className="text-6xl md:text-7xl font-black leading-[1.02] tracking-tight">
 
-              Share Ideas.
+              Share Ideas & Earn
 
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-pink-400 to-purple-500">
                 Sell Creativity.
