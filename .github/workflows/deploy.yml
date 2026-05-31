@@ -25,42 +25,42 @@ jobs:
       - name: Verify SSH Key
         run: |
           ssh-keygen -l -f ~/.ssh/id_ed25519
-      - name: Test Bastion Verbose
-        run: |
-          ssh -vvv \
-          -o StrictHostKeyChecking=no \
-          -i ~/.ssh/id_ed25519 \
-          ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} "hostname"
 
       - name: Test Bastion Login
         run: |
-          ssh -o StrictHostKeyChecking=no \
-          -i ~/.ssh/id_ed25519 \
-          ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} "hostname"
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/id_ed25519 \
+            ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
+            "hostname"
 
       - name: Deploy Backend
         run: |
-          ssh -A -i ~/.ssh/id_ed25519 \
-          ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} "
-            ssh ubuntu@${{ secrets.BACKEND_PRIVATE_IP }} '
-              cd ~/ContentBay &&
-              git pull origin main &&
-              cd backend &&
-              npm install &&
-              pm2 restart contentbay-backend
-            '
-          "
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -o ProxyJump=${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
+            -i ~/.ssh/id_ed25519 \
+            ubuntu@${{ secrets.BACKEND_PRIVATE_IP }} \
+            "
+            cd ~/ContentBay &&
+            git pull origin main &&
+            cd backend &&
+            npm install &&
+            pm2 restart contentbay-backend
+            "
 
       - name: Deploy Frontend
         run: |
-          ssh -A -i ~/.ssh/id_ed25519 \
-          ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} "
-            ssh ubuntu@${{ secrets.FRONTEND_PRIVATE_IP }} '
-              cd ~/ContentBay &&
-              git pull origin main &&
-              cd frontend &&
-              npm install &&
-              npm run build &&
-              pm2 restart contentbay-frontend
-            '
-          "
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -o ProxyJump=${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
+            -i ~/.ssh/id_ed25519 \
+            ubuntu@${{ secrets.FRONTEND_PRIVATE_IP }} \
+            "
+            cd ~/ContentBay &&
+            git pull origin main &&
+            cd frontend &&
+            npm install &&
+            npm run build &&
+            pm2 restart contentbay-frontend
+            "
