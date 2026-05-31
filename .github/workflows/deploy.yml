@@ -25,6 +25,12 @@ jobs:
       - name: Verify SSH Key
         run: |
           ssh-keygen -l -f ~/.ssh/id_ed25519
+      - name: Test Bastion Verbose
+        run: |
+          ssh -vvv \
+          -o StrictHostKeyChecking=no \
+          -i ~/.ssh/id_ed25519 \
+          ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} "hostname"
 
       - name: Test Bastion Login
         run: |
